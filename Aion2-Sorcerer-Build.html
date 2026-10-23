@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorcerer Endgame Build</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky Tab-Leiste, darunter ein Panel pro Bereich; Karten und Tabellen je nach Inhalt. Dark-first, Stahlblau als Akzent, Bernstein = PvE, Koralle = PvP. */
+:root {
+  --bg: #0d1218;
+  --surface: #151c25;
+  --surface2: #1c2530;
+  --line: #2a3644;
+  --fg: #e7ecf2;
+  --muted: #92a3b6;
+  --accent: #5ec6ea;
+  --accent-ink: #06222c;
+  --pve: #eaaa55;
+  --pvp: #ec6b82;
+  --ok: #6fd1a0;
+  --f-display: "Chakra Petch", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #eef1f5; --surface: #ffffff; --surface2: #e5eaf1; --line: #cbd4df;
+    --fg: #14202e; --muted: #53667b; --accent: #0b7496; --accent-ink: #ffffff;
+    --pve: #a85f08; --pvp: #bd2f4b; --ok: #1d7d52; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #eef1f5; --surface: #ffffff; --surface2: #e5eaf1; --line: #cbd4df;
+  --fg: #14202e; --muted: #53667b; --accent: #0b7496; --accent-ink: #ffffff;
+  --pve: #a85f08; --pvp: #bd2f4b; --ok: #1d7d52; color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.55 var(--f-body);
+  padding-block: 0 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 700; letter-spacing: .01em; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+a { color: var(--accent); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+header.top { padding-block: 34px 22px; display: grid; gap: 14px; }
+.eyebrow { font: 500 12px var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.lede { color: var(--muted); max-width: 70ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+nav.tabs {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--bg); border-bottom: 1px solid var(--line);
+  margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))) calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+}
+nav.tabs .row { display: flex; gap: 4px; overflow-x: auto; max-width: 1180px; margin: 0 auto; scrollbar-width: thin; }
+nav.tabs button {
+  flex: none; background: none; border: 0; border-bottom: 3px solid transparent; color: var(--muted);
+  font: 600 14px var(--f-display); letter-spacing: .03em; padding: 13px 14px 10px; cursor: pointer;
+}
+nav.tabs button:hover { color: var(--fg); }
+nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.modesw { display: flex; gap: 6px; max-width: 1180px; margin: 0 auto; padding: 10px 0 2px; }
+.modesw button { font: 600 13px var(--f-display); letter-spacing: .04em; padding: 6px 14px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; }
+.modesw button[aria-pressed="true"]#m-pve { background: var(--pve); color: var(--bg); border-color: var(--pve); }
+.modesw button[aria-pressed="true"]#m-pvp { background: var(--pvp); color: var(--bg); border-color: var(--pvp); }
+.panel { padding-top: 28px; display: grid; gap: 26px; }
+.panel[hidden] { display: none; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head p { color: var(--muted); max-width: 75ch; }
+
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.grid.wide { grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; min-width: 0; display: grid; gap: 10px; align-content: start; }
+.card.flat { background: var(--surface2); }
+.card h3 small { font: 500 12px var(--f-mono); color: var(--muted); letter-spacing: .04em; margin-left: 6px; }
+.card .sub { color: var(--muted); font-size: 13.5px; }
+
+.tag { display: inline-flex; align-items: center; font: 500 11.5px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.tag.pve { color: var(--pve); border-color: color-mix(in srgb, var(--pve) 55%, transparent); }
+.tag.pvp { color: var(--pvp); border-color: color-mix(in srgb, var(--pvp) 55%, transparent); }
+.tag.hyb { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.tag.drv { color: var(--fg); border-style: dashed; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.lv { font: 600 12px var(--f-mono); padding: 2px 7px; border-radius: 3px; background: var(--surface2); }
+.lv.pve { color: var(--pve); } .lv.pvp { color: var(--pvp); }
+.card.flat .lv { background: var(--bg); }
+
+ul.spec { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+ul.spec li { padding-left: 14px; position: relative; font-size: 14px; }
+ul.spec li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 2px; background: var(--muted); }
+.mode { display: grid; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+.mode:first-of-type { border-top: 0; padding-top: 0; }
+.mode .mh { display: flex; align-items: center; gap: 8px; }
+
+.twocol { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 560px) { .twocol { grid-template-columns: 1fr; } }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11.5px var(--f-mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); background: var(--surface2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+td .s { display: block; color: var(--muted); font-size: 12.5px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-size: 12.5px; padding: 2px 8px; border-radius: 3px; background: var(--surface2); border: 1px solid var(--line); }
+.chip.k { border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.tablewrap .chip { background: var(--bg); }
+
+.note { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 14px; font-size: 14px; color: var(--fg); border-radius: 0 6px 6px 0; }
+.note.warn { border-left-color: var(--pve); }
+.note b { font-weight: 600; }
+
+.kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 2px; min-width: 0; }
+.kpi .n { font: 700 26px var(--f-display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.kpi .l { color: var(--muted); font-size: 13px; }
+
+.seg { display: flex; height: 26px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); background: var(--surface2); }
+.seg i { display: block; height: 100%; border-right: 1px solid var(--bg); }
+.seg i:last-child { border-right: 0; }
+.c1 { background: var(--accent); } .c2 { background: color-mix(in srgb, var(--accent) 72%, var(--bg)); }
+.c3 { background: color-mix(in srgb, var(--accent) 48%, var(--bg)); } .c4 { background: var(--pve); }
+.c5 { background: var(--pvp); } .c6 { background: var(--surface2); }
+.scale { position: relative; height: 22px; margin-bottom: 4px; font: 500 11.5px var(--f-mono); color: var(--muted); }
+.scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.scale span:first-child { transform: none; }
+.scale span:last-child { transform: translateX(-100%); }
+.legend { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); margin-top: 12px; }
+.legend div { display: grid; grid-template-columns: 14px 1fr; gap: 8px; font-size: 13.5px; align-items: start; }
+.legend i { width: 14px; height: 14px; border-radius: 3px; margin-top: 3px; display: block; }
+
+.stack { display: flex; height: 30px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+.stack i { display: flex; align-items: center; justify-content: center; font: 600 12px var(--f-mono); color: var(--accent-ink); font-style: normal; }
+.stack .a { background: var(--accent); } .stack .b { background: color-mix(in srgb, var(--accent) 70%, var(--bg)); color: var(--fg); }
+.stack .c { background: var(--pve); } .stack .d { background: var(--pvp); color: #fff; }
+
+.order { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 8px; }
+.order li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; font-size: 14px; }
+.order li::before { content: counter(s); font: 600 12px var(--f-mono); width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface2); display: grid; place-items: center; }
+
+.stars { color: var(--accent); font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; }
+footer { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line); display: grid; gap: 12px; color: var(--muted); font-size: 13.5px; }
+footer ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; columns: 2 280px; }
+@media (prefers-reduced-motion: no-preference) { .panel:not([hidden]) { animation: rise .25s ease-out; } @keyframes rise { from { opacity: .001; transform: translateY(5px); } to { opacity: 1; transform: none; } } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Aion 2 Global · Europa · Steam · Stand 22.10.2026</div>
+    <h1>Sorcerer Endgame Build</h1>
+    <p class="lede">Feuer-Magier mit Hellfire-Burst. Oben schaltest du zwischen PvE- und PvP-Build um: Skills, Stigmas, Gear, Daevanion, Arcana und Pantheon passen sich an. Daten aus Global-Top-Listen, Korea-Top-737 und den Guides von Krix Domi, aion2-meta, Gamerblurb und Metabot.</p>
+    <div class="meta"><span class="tag pve">PvE</span><span class="tag pvp">PvP</span><span class="tag drv">abgeleitet = eigene Zusammenführung</span></div>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche"><div class="modesw" role="group" aria-label="Build-Modus"><button type="button" id="m-pve" aria-pressed="true">PvE-Build</button><button type="button" id="m-pvp" aria-pressed="false">PvP-Build</button></div><div class="row" id="tabrow" role="tablist"></div></nav>
+
+  <main>
+    <section class="panel" id="p-ueberblick" hidden></section>
+    <section class="panel" id="p-skills" hidden></section>
+    <section class="panel" id="p-stigmas" hidden></section>
+    <section class="panel" id="p-gear" hidden></section>
+    <section class="panel" id="p-pets" hidden></section>
+    <section class="panel" id="p-daevanion" hidden></section>
+    <section class="panel" id="p-arcana" hidden></section>
+    <section class="panel" id="p-pantheon" hidden></section>
+  </main>
+
+  <footer>
+    <div><b style="color:var(--fg)">Quellen</b></div>
+    <ul>
+      <li><a href="https://aion2-guides.info/en/sorcerer/" target="_blank" rel="noopener">aion2-guides.info · Sorcerer (Krix Domi, Skills, Stigmas, Arcana, Daevanion)</a></li>
+      <li><a href="https://aion2-meta.com/guides/sorcerer/" target="_blank" rel="noopener">aion2-meta.com · Sorcerer (Top-Spielerdaten Global und Korea)</a></li>
+      <li><a href="https://gamerblurb.com/guides/aion-2-sorcerer-build-guide-pve-pvp-and-leveling-global" target="_blank" rel="noopener">Gamerblurb · Sorcerer PvE, PvP, Leveling</a></li>
+      <li><a href="https://gamesfuze.com/guides/aion-2-sorcerer-build-best-skills-stigmas-and-gear-for-pve-and-pvp/" target="_blank" rel="noopener">GamesFuze · Sorcerer Build</a></li>
+      <li><a href="https://metabot.gg/en/aion-2/classes/sorcerer/build" target="_blank" rel="noopener">Metabot · Sorcerer Builds</a></li>
+      <li><a href="https://aion2-guides.info/en/pets/" target="_blank" rel="noopener">aion2-guides.info · Pets</a>, <a href="https://aion2petguide.com/classes" target="_blank" rel="noopener">aion2petguide.com</a></li>
+      <li><a href="https://gamesfuze.com/guides/aion-2-pantheon-guide-how-to-unlock-and-upgrade-statues/" target="_blank" rel="noopener">GamesFuze · Pantheon</a></li>
+    </ul>
+    <p>Fan-Guides, keine offiziellen Angaben. Patches ändern Zahlen; vor Respec oder teuren Rolls kurz im Spiel gegenprüfen.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var TABS = [
+    ["ueberblick", "Überblick"], ["skills", "Skills"], ["stigmas", "Stigmas"], ["gear", "Gear"],
+    ["pets", "Pets"], ["daevanion", "Daevanion"], ["arcana", "Arcana"], ["pantheon", "Pantheon"]
+  ];
+  function esc(s) { return String(s); }
+  function ul(a) { return '<ul class="spec">' + a.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul>"; }
+  function chips(a, key) { return '<div class="chips">' + a.map(function (x, i) { return '<span class="chip' + (key && i < key ? " k" : "") + '">' + x + "</span>"; }).join("") + "</div>"; }
+  function head(t, p) { return '<div class="sec-head"><h2>' + t + "</h2>" + (p ? "<p>" + p + "</p>" : "") + "</div>"; }
+  function table(cols, rows) {
+    return '<div class="tablewrap"><table><thead><tr>' + cols.map(function (c) { return "<th>" + c + "</th>"; }).join("") +
+      "</tr></thead><tbody>" + rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + c + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table></div>";
+  }
+
+  var mode = "pve";
+  try { var sm = localStorage.getItem("sorc-mode"); if (sm === "pvp") mode = "pvp"; } catch (e) {}
+  function M(a, b) { return mode === "pve" ? a : b; }
+  function mtag() { return '<span class="tag ' + mode + '">' + M("PvE-Build", "PvP-Build") + "</span>"; }
+
+  /* ---------- ÜBERBLICK ---------- */
+  function overview() {
+    var pve = mode === "pve";
+    return head(pve ? "PvE-Build: Hellfire-Burst auf Dauer" : "PvP-Build: Kontrolle, Accuracy, Überleben",
+      pve ? "Der Sorcerer lädt Hellfire auf 3/3, öffnet vorher das Schadensfenster mit Delayed Explosion und Winter's Shackles und füllt die Pausen mit Wish, Bittercold Wind, Blaze und Firestorm. Alles im Build verkürzt Cooldowns und hält die Mana-Schwellen."
+          : "Im PvP tauscht der Sorcerer Schadensspitzen gegen Kontrolle: Ice Chain und Bittercold Wind halten Abstand, Frost und Frost Burst eröffnen, Hellfire folgt nur, wenn niemand bestrafen kann. Accuracy steht höher als im PvE, dazu HP, Toleranz und Status-Resist.") +
+      '<div class="kpis">' +
+      '<div class="kpi"><span class="n">&gt;50 %</span><span class="l">MP: zusätzliche Crit-Chance</span></div>' +
+      '<div class="kpi"><span class="n">&gt;25 %</span><span class="l">MP: +20 % Schaden (Grace of Enhancement)</span></div>' +
+      '<div class="kpi"><span class="n">20</span><span class="l">Ziel-Level: ' + M("Wish, Blaze, Bittercold Wind, Hellfire", "Hellfire, Bittercold Wind, (Firestorm, Winter's Shackles 16+)") + "</span></div>" +
+      '<div class="kpi"><span class="n">4</span><span class="l">Stigma-Slots (Lv 22, 27, 32, 37)</span></div>' +
+      "</div>" +
+      '<div class="grid wide">' +
+      '<div class="card">' + mtag() + "<h3>" + M("Rotation", "Kampfablauf") + "</h3>" + (pve ? ul([
+        "Wish of Concentration, solange es unter Level 16 ist, danach ans Ende der Kette",
+        "Element Enhancement, dann Delayed Explosion, dann Winter's Shackles: das öffnet ein 5-s-Schadensfenster",
+        "Hellfire per Hand auf 3/3 laden und im Fenster entladen",
+        "Fire Wall und Cold Storm (nicht in Bewegung wirkbar)",
+        "Bittercold Wind, Blaze, Firestorm; Flame Arrow, wenn alles andere im Cooldown ist"
+      ]) : ul([
+        "Mit Ice Chain und Bittercold Wind Abstand halten (Bittercold wurzelt mit 60 %)",
+        "Frost und Frost Burst, wenn sich ein Kontrollfenster öffnet",
+        "Curse: Tree auf das gefährlichste Ziel, Treffer beenden den Effekt vorzeitig",
+        "Nach Defiance des Gegners dessen Tenacity abwarten, bevor du wieder kontrollierst",
+        "Element Enhancement und Wish in sicheren Fenstern, Hellfire erst, wenn niemand bestrafen kann",
+        "Arctic Armor vor dem Druck zünden, Hibernation als Notaus, Defiance gegen CC aufheben"
+      ])) + "</div>" +
+      '<div class="card">' + mtag() + "<h3>" + M("Bedienung und Makros", "Hotbar im PvP") + "</h3>" + (pve ? ul([
+        "Rechtsklick-Makro: Wish, Element Enhancement, Delayed Explosion, Winter's Shackles, Fire Wall, Cold Storm, Bittercold Wind, Blaze, Firestorm (10 ms Schritte)",
+        "Linksklick: Flame Arrow. Seitentaste oder Q: Hellfire von Hand",
+        "Wish ab Level 16 ans Ende der Kette setzen",
+        "Test von EUTOPIA: einzelne Leisten ca. 21.100 DPS, Makro-Setup ca. 19.200, Ein-Makro-Variante ca. 17.400"
+      ]) : ul([
+        "Kein Vollmakro: Kontrolle und Timing brauchen Handarbeit",
+        "Ice Chain und Frost auf schnell erreichbare Tasten, Defiance auf eine Taste ohne Doppelbelegung",
+        "Boots mit Move Speed helfen beim Umpositionieren",
+        "Bewegliches Hellfire (Spezialisierung Lv 20) ermöglicht Casten im Laufen"
+      ])) + '<p class="sub">Skill Queue und Zielsperre aktivieren, damit der Basisangriff nach Skills weiterläuft.</p></div>' +
+      "</div>" +
+      head("Skill-Level-Quellen am Beispiel Wish of Concentration", "Skillpunkte bringen nur Level 10. Der Rest kommt aus Daevanion, Ringen und Arcana.") +
+      '<div class="card"><div class="stack" role="img" aria-label="Wish of Concentration: 10 Skillpunkte, 4 Daevanion, 2 Ringe, 4 Arcana ergibt Level 20"><i class="a" style="flex:10">10 Skillpunkte</i><i class="b" style="flex:4">+4</i><i class="c" style="flex:2">+2</i><i class="d" style="flex:4">+4</i></div>' +
+      '<div class="legend"><div><i class="c1"></i><span>Skillpunkte: bis Level 10</span></div><div><i class="c3"></i><span>Daevanion-Nodes pro Brett</span></div><div><i class="c4"></i><span>Ring-Linien (z. B. +2 Wish, +2 Bittercold)</span></div><div><i class="c5"></i><span>Arcana-Karten mit Skill-Linien</span></div></div></div>' +
+      head("Stat-Reihenfolge") +
+      '<div class="card">' + ul(pve ? [
+        "Max MP und MP-Regeneration, bis die Rotation nicht mehr trocken läuft",
+        "Attack und Critical Hit, Combat Speed und Cooldown Reduction",
+        "Double Chance, Weapon Damage Boost, Multi-Hit; Accuracy später"
+      ] : [
+        "Accuracy (deutlich höher als im PvE)",
+        "PvP Damage Boost, dann HP und PvP Damage Tolerance",
+        "Status Effect Resist, Combat Speed, MP-Versorgung"
+      ]) + "</div>" +
+      '<div class="note warn"><b>Einordnung.</b> Die PvE-Daten stammen aus Top-Spielerlisten (Global-Top-54, Korea-Top-737) und den Guides von Krix Domi und aion2-meta. Für PvP gibt es weniger belastbare Quellen: Skillwahl, Stigmas und Stat-Reihenfolge sind veröffentlicht, Gear-Linien, Daevanion-Pfade und Pet-Slots für PvP habe ich daraus abgeleitet und als „abgeleitet“ markiert.</div>';
+  }
+
+  /* ---------- SKILLS ---------- */
+  var SK = [
+    ["Hellfire", "20", "20",
+      ["Lv 8: Feuer-DoT 10 s bei Treffer", "Lv 16: −15 s Cooldown", "Lv 20: ignoriert Block und Ausweichen, Multi-Hit", "Alternative früh: +30 % Skill Speed (Lv 8)"],
+      ["Lv 12: ignoriert Block und Ausweichen, Multi-Hit", "Lv 16: −15 s Cooldown", "Lv 20: +30 % Skill Speed oder mobiler Cast"],
+      "Kernschaden. Per Hand auf 3/3 laden und im Fenster von Winter's Shackles entladen."],
+    ["Firestorm", "16–20", "16",
+      ["Lv 12: −2 s Hellfire-Cooldown pro Feuerball", "Lv 16: +15 % Schaden je Feuerball, bis +75 %", "Lv 20: +20 % Skill Speed"],
+      ["Lv 8: −60 % eingehende Heilung für 5 s", "Lv 16: +15 % Schaden je Feuerball, bis +75 %", "Lv 20: −2 s Hellfire-Cooldown pro Feuerball"],
+      "Früh im Spiel zusätzlich −50 % MP-Kosten möglich."],
+    ["Blaze", "20", "16–20",
+      ["Lv 8: verzögerter Schaden nach 3 s", "Lv 16: −3 s Wish-Cooldown bei Treffer", "Lv 20: absorbiert 3 % HP (Alternative: Multi-Hit, +50 % MP-Rückgewinn)"],
+      ["Lv 12: Multi-Hit bei Treffer", "Lv 16: −3 s Wish-Cooldown bei Treffer", "Lv 20: absorbiert 3 % HP"],
+      "Braucht die Markierung von Fire Mark."],
+    ["Wish of Concentration", "20", "16",
+      ["Lv 12: +10 % Combat Speed", "Lv 16: −10 s auf alle Skill-Cooldowns", "Lv 20: +10 % zusätzlicher Angriff (Alternative Lv 8)"],
+      ["Lv 8: +10 % zusätzlicher Angriff", "Lv 16: −10 s auf alle Skill-Cooldowns", "Lv 20: +10 % Combat Speed"],
+      "Zuerst maxen. Alternativen: −10 % MP-Kosten oder +500 Max MP."],
+    ["Bittercold Wind", "20", "20",
+      ["Lv 8: +1 s Beschwörungsdauer", "Lv 12: ignoriert Block und Ausweichen, trifft kritisch"],
+      ["Lv 8: Zieh-Effekt", "Lv 12: ignoriert Block und Ausweichen, trifft kritisch", "Lv 20: −1 s Frost-Cooldown bei Treffer"],
+      "60 % Root-Chance. Im PvP der meistgemaxte Skill (85 % der Top-Spieler auf 20+)."],
+    ["Flame Arrow", "16–20", "16",
+      ["Lv 12: +5 % Feuerschaden 10 s nach Pyroclasm", "Lv 16: setzt Blaze-Cooldown bei Pyroclasm zurück"],
+      ["Lv 12 und 16 wie PvE", "Lv 20: absorbiert 1 % HP"],
+      "Basisangriff auf Linksklick, Füller, wenn alles im Cooldown ist."],
+    ["Winter's Shackles", "16", "16",
+      ["Lv 8: +20 % PvE-/+10 % PvP-Schaden für 5 s nach Landung", "Lv 16: −15 s Cooldown", "Lv 20: Winter's Illusion als Kettenskill"],
+      ["Lv 8: wie PvE", "Lv 12: Winter's Illusion oder mobil", "Lv 20: −15 s Cooldown"],
+      "Öffnet das Schadensfenster."],
+    ["Ice Chain", "12", "12",
+      ["Lv 8: +20 % Skill Speed", "Lv 12: −1 s Winter's-Shackles-Cooldown bei Treffer"],
+      ["Distanz halten und Ziele kontrollieren"],
+      "Niedrige Priorität im PvE, im PvP 37 % der Top-Spieler auf 20+."],
+    ["Flame Scattershot", "12", "nicht skillen",
+      ["Lv 8: mobile Variante", "Lv 12: Multi-Hit, nur auf Staggered-Ziele", "Lv 16: −1 s alle Cooldowns bei Treffer"],
+      [], "Im PvP keine Punkte wert."],
+    ["Frost", "überspringen", "12",
+      [],
+      ["Lv 12: +25 % Frost-Chance gegen Spieler", "Lv 16: +1 s Frost-Dauer"],
+      "50 % Freeze-Chance. Im PvE nur Levelskill."],
+    ["Frost Burst", "überspringen", "12",
+      [],
+      ["Lv 12: ignoriert Block und Ausweichen, trifft kritisch", "Lv 16: 50 % Chance auf Cooldown-Reset"],
+      "Eröffnet nach Frost den Kontrollkombo."],
+    ["Defiance", "12", "12–16",
+      ["Lv 8: stellt 20 % HP wieder her", "Lv 12: +2 s Tenacity"],
+      ["Lv 8: stellt 20 % HP wieder her", "Lv 16: +50 % PvE-/+25 % PvP-Toleranz während Tenacity"],
+      "Löst CC. Im PvP für den Sorcerer wichtiger als im PvE."]
+  ];
+  function skillCard(s) {
+    var lv = M(s[1], s[2]), sp = M(s[3], s[4]);
+    var skip = (lv === "überspringen" || lv === "nicht skillen");
+    return '<div class="card' + (skip ? " flat" : "") + '"><h3>' + s[0] + "</h3>" +
+      '<div class="tags"><span class="lv ' + mode + '">' + (skip ? lv : "Ziel Lv " + lv) + "</span></div>" +
+      (sp.length ? ul(sp) : "") + '<p class="sub">' + s[5] + "</p></div>";
+  }
+  function skills() {
+    var pas = [
+      ["Robe of Flame", "max", "max", "Accuracy, PvE Damage Boost, Double Chance. Als Linie auf Gear zuerst suchen (74 % der PvE-Top-Spieler)."],
+      ["Fire Mark", "max", "max", "Setzt die Markierung, die Blaze braucht."],
+      ["Grace of Enhancement", "hoch", "nachrangig", "+20 % PvE-Schaden bei MP ≥ 25 %. Im PvP wird Grace of Resistance bevorzugt."],
+      ["Grace of Resistance", "niedrig", "mittel", "Defensive Variante, 11 % der PvP-Gear-Linien."],
+      ["Robe of Earth", "max", "mittel", "Max MP und Critical Hit bei MP ≥ 50 %."],
+      ["Vitality Evaporation", "mittel", "mittel", "Zusatzschaden gegen Ziele über 70 % HP."],
+      ["Robe of Cold", "mittel", "mittel", "Defense, Critical Hit Resist, verlangsamt Angreifer."],
+      ["Cold Snap", "niedrig", "niedrig", "Zusatzschaden gegen verlangsamte Ziele."],
+      ["Revitalization Contract", "–", "mittel", "PvP-lastig (23 % der PvP-Gear-Linien)."],
+      ["Absorb Essence", "–", "niedrig", "Selten, vor allem im PvP."]
+    ];
+    var rows = pas.map(function (r) { return [r[0], M(r[1], r[2]), r[3]]; });
+    return head("Skills mit Leveln und Spezialisierungen: " + M("PvE", "PvP"), "Spezialisierungen: ein Slot ab Level 8, zwei ab 12, drei ab 20. Die Zielwerte sind Gesamtlevel nach Skillpunkten, Daevanion, Ringen und Arcana.") +
+      '<div class="note"><b>Leveln in dieser Reihenfolge:</b> ' + M("Blaze, Wish of Concentration, Bittercold Wind, Hellfire (Max zuerst), danach Flame Arrow, Firestorm, Winter's Shackles. Ice Chain, Frost, Defiance zuletzt.", "Hellfire, Bittercold Wind, Firestorm, Winter's Shackles (Max zuerst), dann Blaze, Wish, Frost, Frost Burst, Defiance. Flame Scattershot auslassen.") + " Pro Skill sind 21 Punkte nötig, um Level 8 und die erste Spezialisierung zu erreichen.</div>" +
+      '<div class="grid wide">' + SK.map(skillCard).join("") + "</div>" +
+      head("Passive Skills") +
+      table(["Passiv", "Priorität " + M("PvE", "PvP"), "Wirkung"], rows) +
+      '<div class="note">Passive kommen aus Skillpunkten, Daevanion-Nodes, Arcana (Mirror, Bell) und Soul-Binding-Linien auf Rüstung, Halskette und Ohrringen. Auf Gear zuerst Robe of Flame suchen; Fire Mark, Robe of Cold und Grace of Enhancement nur, „wenn sie kommen“.</div>';
+  }
+
+  /* ---------- STIGMAS ---------- */
+  var ST = {
+    "Element Enhancement": "+20 % Feuer- und Wasserangriff für 10 s; auf Level 20 zusätzlich +10 %",
+    "Delayed Explosion": "Ziel erhält 4 s lang +15 % Schaden von dir, danach Explosion; Level 10 senkt den Cooldown um 10 s",
+    "Fire Wall": "10 s Schaden über Zeit, 60 s Cooldown, nicht in Bewegung wirkbar; +2 m Breite, Enhanced Embers",
+    "Cold Storm": "30 % Root für 2 s; Enhanced Frostbite macht Zusatzschaden; 60 s Cooldown",
+    "Steel Barrier": "Schild über 16 % Max-HP für 60 s, +10 % PvE-Schadenstoleranz solange er hält",
+    "Arctic Armor": "90 s Cooldown, +20 % PvE-Schadenstoleranz für 10 s; im PvP vor Druck zünden",
+    "Hibernation": "180 s Cooldown, 5 s Immunität gegen Schaden und Statuseffekte; vorzeitiges Ende heilt 20 % Max-HP",
+    "Curse: Tree": "Verwandelt das Ziel 10 s in einen Baum, −20 % Feuertoleranz; jeder Treffer bricht es",
+    "Soul Freeze": "75 % Chance auf Seal für 5 s (Situation / PvP)",
+    "Glacial Smite": "Spezialfall bei Rudeln oder gescheiterten Stagger-Checks",
+    "Divine Burst": "Situativ für Stagger-Schaden"
+  };
+  function stSetup(title, items, why, tagline) {
+    return '<div class="card"><div class="tags"><span class="tag ' + mode + '">' + tagline + "</span></div><h3>" + title + "</h3>" +
+      '<div class="chips">' + items.map(function (i) { return '<span class="chip k"><b>' + i[0] + '</b> <span class="mono">Lv ' + i[1] + "</span></span>"; }).join("") + "</div>" +
+      '<p class="sub">' + why + "</p></div>";
+  }
+  function stigmas() {
+    var setups = mode === "pve" ? [
+      stSetup("Standard-Leiste", [["Element Enhancement", "20"], ["Delayed Explosion", "10"], ["Fire Wall", "10"], ["Cold Storm", "5–10"]], "Reihenfolge: alle vier auf 5, dann auf 10, dann Element Enhancement auf 20. Die Top-Spieler tragen diese vier zu 92–99 %. Globale Referenz: Element Enhancement 11, Delayed Explosion 7, Fire Wall 5, Cold Storm 5.", "PvE · Standard"),
+      stSetup("Mit Überlebenshilfe", [["Element Enhancement", "20"], ["Delayed Explosion", "10"], ["Fire Wall", "10"], ["Steel Barrier", "7–10"]], "Steel Barrier ersetzt Cold Storm. 95 % der PvE-Top-Spieler tragen ihn, global 72 %. Im Gruppen-Content Steel Barrier gegen Delayed Explosion tauschen.", "PvE · Safe"),
+      stSetup("Gegen Stagger-Checks", [["Element Enhancement", "20"], ["Delayed Explosion", "10"], ["Fire Wall", "10"], ["Divine Burst", "5–10"]], "Divine Burst liefert Stagger-Schaden; nur nehmen, wenn der Boss einen Stagger-Check hat.", "PvE · Situativ")
+    ] : [
+      stSetup("Kontroll-Leiste", [["Element Enhancement", "15–20"], ["Arctic Armor", "10"], ["Hibernation", "10"], ["Curse: Tree", "5–10"]], "Gamerblurb-Linie für Global-PvP. Arctic Armor (96 % der PvP-Top-Spieler) und Hibernation (95 %) sind der Überlebenskern, Curse: Tree isoliert das gefährlichste Ziel.", "PvP · Kontrolle"),
+      stSetup("Schild-Variante", [["Element Enhancement", "8–15"], ["Steel Barrier", "7"], ["Delayed Explosion", "5"], ["Curse: Tree", "4"]], "Metabot-Editorial-Pick: Level 8/7/5/4. Mehr Schaden als die Kontroll-Leiste, weniger Notfallknöpfe.", "PvP · Schaden"),
+      stSetup("Mit Seal", [["Element Enhancement", "15"], ["Arctic Armor", "10"], ["Soul Freeze", "7–10"], ["Hibernation", "10"]], "Soul Freeze (71 % im PvP) setzt Gegner mit 75 % Chance 5 s aus. Abgeleitet aus den Top-Listen, kein fertiger Guide.", "PvP · Seal")
+    ];
+    var show = mode === "pve" ? ["Element Enhancement", "Delayed Explosion", "Fire Wall", "Cold Storm", "Steel Barrier", "Glacial Smite", "Divine Burst"] : ["Element Enhancement", "Arctic Armor", "Hibernation", "Curse: Tree", "Soul Freeze", "Steel Barrier", "Delayed Explosion"];
+    return head("Stigmas: " + M("PvE", "PvP"), "Vier Slots, die ab Level 22, 27, 32 und 37 öffnen. Shards stammen aus Abyss-Shop (200), Nightmare-Shop (Phantasmal Fragments) und Shugo-Shop (Centuryroot Tokens), je 35 pro Charakter.") +
+      '<div class="grid wide">' + setups.join("") + "</div>" +
+      '<div class="note">' + M("<b>Empfehlung PvE:</b> Standard-Leiste. Priorität beim Leveln: Element Enhancement vor Delayed Explosion, dann Fire Wall, dann Cold Storm.", "<b>Empfehlung PvP:</b> Kontroll-Leiste. Element Enhancement auf mittlerem Level, die Punkte in Arctic Armor und Hibernation. Die Stufen sind aus den Top-Listen abgeleitet.") + ' <span class="tag drv">teilweise abgeleitet</span></div>' +
+      head("Wirkung der Stigmas") +
+      '<div class="grid">' + show.map(function (n) { return '<div class="card flat"><h3>' + n + '</h3><p class="sub">' + ST[n] + "</p></div>"; }).join("") + "</div>";
+  }
+
+  /* ---------- GEAR ---------- */
+  function gear() {
+    var rows = [
+      ["Waffe", "Splendent Ebony/Wise Dragon Lord Spellbook +15 (52 % / 32 % der Global-Top)", "Weapon Damage Boost, Might, Combat Speed, Damage Boost, Multi-Hit Chance, Robe of Flame", "Weapon Damage Boost, Might, Combat Speed, Multi-Hit; Manastones: Accuracy statt MP"],
+      ["Nebenhand", "Splendent Ebony/Wise Dragon Lord Guard +15", "Weapon Damage Boost, Might, Combat Speed, Damage Boost, Robe of Flame", "Combat Speed, Damage Boost, HP-Manastones"],
+      ["Helm", "Nuakum Helm +12", "Double Chance, Attack Increase, Attack, Robe of Flame; frei: Crit oder Accuracy", "Attack Increase, Attack, Accuracy; Incoming Heal"],
+      ["Schulter", "Nuakum Pauldrons +11", "Critical Damage Boost, Double Chance, Attack; frei: Crit oder Accuracy", "Accuracy, Attack, Double Chance"],
+      ["Brust", "Nuakum Breastplate +12", "Damage Boost, Perfect Chance, Attack; frei: Crit oder Accuracy", "Damage Boost, Accuracy, Damage Tolerance"],
+      ["Hose", "Nuakum Greaves +12", "Attack Increase, Damage Tolerance, Attack, Perfect Chance", "Damage Tolerance, Attack Increase, HP"],
+      ["Handschuhe", "Nuakum Gloves +11", "Combat Speed, Perfect Chance, Attack, Crit", "Combat Speed, Accuracy, Attack"],
+      ["Stiefel", "Nuakum Boots +11", "Move Speed, Perfect Chance, Attack, Crit", "Move Speed, Accuracy, Attack"],
+      ["Umhang", "Nuakum Cloak +11", "Double Chance, Attack Increase, Attack, Perfect Chance", "Damage Tolerance, Attack Increase, Accuracy"],
+      ["Halskette", "Splendent Ebony Dragon Lord Necklace +15 oder Enraged Kromede", "Attack, Critical Hit, Accuracy, Might, Combat Speed", "Attack, Accuracy, HP"],
+      ["Ohrringe", "Enraged Kromede Earrings oder Splendent Ebony +15", "Attack, Critical Hit, Accuracy, Might, Precision, Move Speed", "Attack, Accuracy, Status-Resist"],
+      ["Ringe ×2", "Splendent Ebony Dragon Lord Ring +15", "Attack plus Skill-Level: Blaze, Hellfire, Wish, Bittercold Wind, Flame Arrow", "Skill-Level: Bittercold Wind, Hellfire, Wish, Firestorm"],
+      ["Armbänder ×2", "Ascension Bracelet +10 (50 %) oder Liberator", "Gott-Stats: Time, Destruction, Illusion, Wisdom", "Time, Illusion, Freedom (Accuracy), Life"],
+      ["Amulett", "Revelation Amulet (96 % der Top)", "Standard", "Fierce Battle Amulet (PvP)"],
+      ["Gürtel · Runen", "Noble Belt · Clash Rune ×2", "Standard bei 100 %", "Standard"]
+    ];
+    var col = mode === "pve" ? 2 : 3;
+    var rowsHtml = rows.map(function (r) { return [r[0], r[1], r[col] + (mode === "pvp" && r[3] !== r[2] ? "" : "")]; });
+    return head("Gearpieces mit Best-in-Slot-Stats: " + M("PvE", "PvP"), "Die Items sind die häufigsten der Global-Top-54: Nuakum-Rüstung, Splendent-Dragon-Lord-Waffen und -Schmuck. Substat-Linien stammen aus dem Korea-Top-737 und den Guides. Die Waffe ist ein Spellbook (Tome).") +
+      table(["Slot", "Item (Global-Top)", M("PvE-Substats", "PvP-Substats (abgeleitet)")], rowsHtml) +
+      '<div class="grid">' +
+      '<div class="card">' + mtag() + "<h3>Manastones</h3>" + chips(M(["Attack", "Critical Hit", "Accuracy Bonus", "MP", "Weapon Damage Boost"], ["Attack", "Accuracy Bonus", "HP", "Critical Hit"]), 2) + '<p class="sub">' + M("Attack bei 60–86 % der Top-Spieler, Critical Hit und HP je um 40–64 %, bei Waffen auch MP.", "Im PvP Accuracy und HP statt MP, sonst wie PvE.") + "</p></div>" +
+      '<div class="card">' + mtag() + "<h3>Titel</h3>" + ul(M(["Empty Closet: Combat Speed +3,5 %, Cooldown Reduction +3,5 % (76 %)", "Unbound by Genus: PvE Damage Boost +4,5 %, Attack +34, Crit +68 (45 %)", "Alternativ Dominator of Dimensions oder Saint of Altgard/Verteron"], ["Empty Closet (Combat Speed, Cooldown Reduction)", "Saint of Ereshkigal: PvP Damage Boost +4 %, Endurance Penetration +2,5 %, Crit +60", "Treading on White/Black Wings: PvP Damage Boost +4 %, PvP Attack +40, PvP Accuracy +80"])) + "</div>" +
+      '<div class="card">' + mtag() + "<h3>Flügel</h3>" + ul(M(["Talisra Wings (82 % der PvE-Top, Cooldown Reduction)", "Übergang: Forest Spirit oder Dark Veil Wings"], ["Talisra Wings (65 %)", "Brawler Wings (20 %, nur PvP)"])) + "</div>" +
+      "</div>" +
+      '<div class="note warn"><b>Offene Punkte.</b> Die Korea-Gear-Liste (Spiritforged, Vakron, Aulamus) unterscheidet sich von den Global-Top-54: dort tragen die meisten Nuakum. Die PvP-Substats sind aus der veröffentlichten PvP-Stat-Reihenfolge (Accuracy, PvP-Schaden, HP und Toleranz, Status-Resist) abgeleitet, es gibt keine Top-Liste dazu. Ob Ebony oder Wise passt, hängt von der Fraktion ab.</div>';
+  }
+
+  /* ---------- PETS ---------- */
+  function pets() {
+    var g = [
+      ["Cogni", "Erste Wahl für den Sorcerer: der Owned-Stat liefert Might und Critical Hit, die Zauber skalieren.", "PvE Damage Boost 2–4 %", "Max-Level-Bonus: HP +30, Crit +2, Might +1"],
+      ["Fera", "Zweite Wahl: Accuracy wird im PvP wichtig.", "Weapon Damage Boost 1,5–3 %", "Max-Level-Bonus: Accuracy +2, Dexterity +1, Mount-Tempo +3"],
+      ["Natura", "Nur bei Platz übrig: Precision und Crit-Resist.", "PvE Damage Boost 2–4 %", "Max-Level-Bonus: Stamina +9, Crit Resist +2, Precision +1"],
+      ["Varian", "Nicht nötig, außer für den Titel Unbound by Genus.", "Front Attack Damage Boost 1,5–3 %", "Max-Level-Bonus: Evasion +2, Constitution +1"],
+      ["Special", "Einziges Wheel mit Double Chance in Slot 4.", "Double Chance 1,5–3 %", "Kein Owned-Effekt"]
+    ];
+    var slotRows = [
+      ["1 und 5", "Attack Bonus 8–16 (oder Max Attack)", "Attack Bonus"],
+      ["2 und 8", "HP Increase 0,8–1,6 %", "HP Increase"],
+      ["3, 6 und 9", "Accuracy Bonus 20–40 oder Critical Hit", "Accuracy Bonus zuerst"],
+      ["4", "Wheel-Linie (siehe Karten)", "Wheel-Linie"],
+      ["7", "PvE Damage Tolerance 2–4 %", "Damage Tolerance"]
+    ];
+    return head("Pet Genus: fünf Wheels mit je neun Insight-Slots", "Slot 4 prägt das Wheel, die übrigen Linien sind bei allen Wheels gleich. Die Slot-Tabelle folgt Aragon (aion2-guides), die Sorcerer-Gewichtung stammt vom Pet-Guide, der Cogni und Fera nennt.") +
+      '<div class="grid">' + g.map(function (x, i) { return '<div class="card"><h3>' + x[0] + "</h3><p class=\"sub\">" + x[1] + '</p><div class="mode"><div class="mh"><span class="tag ' + mode + '">Slot 4</span></div><p>' + x[2] + '</p></div><p class="sub">' + x[3] + "</p></div>"; }).join("") + "</div>" +
+      head("Slots 1 bis 9: " + M("PvE", "PvP")) +
+      table(["Slot", "Beste Linie", "Gewichtung"], slotRows.map(function (r) { return [r[0], r[1], M("Schaden zuerst (Attack, Crit)", r[2] + " vor Crit")]; })) +
+      '<div class="grid">' +
+      '<div class="card"><h3>Rollen und Locken</h3>' + ul([
+        "Alle Wheels zuerst auf Insight 10 bringen, vorher nichts locken",
+        "Auto Analyze auf Unique oder Heroic stellen, nur Linien nahe am Maximum locken",
+        "Lock-Reihenfolge: 1, 4, 5, dann 3, 6, 9, dann 2, 7, 8",
+        "Cogni zuerst voll ausbauen, danach Fera"
+      ]) + "</div>" +
+      '<div class="card"><h3>Gott-Stats multiplizieren Flachwerte</h3>' + ul([
+        "Might erhöht Attack, Freedom erhöht Accuracy, Precision erhöht Critical Hit",
+        "Darum Flachwerte bevorzugen: Accuracy Bonus, Critical Hit, Attack Bonus"
+      ]) + "</div>" +
+      "</div>" +
+      '<div class="note warn"><b>Lücke.</b> Eine eigene Pet-Liste für den Sorcerer, getrennt nach PvE und PvP, habe ich nicht gefunden. Die Slot-Werte gelten für Schadensklassen allgemein, die Sorcerer-Gewichtung ist aus den Owned-Stats abgeleitet. <span class="tag drv">abgeleitet</span></div>';
+  }
+
+  /* ---------- DAEVANION ---------- */
+  function daevanion() {
+    var pve = mode === "pve";
+    var stages = pve ? [
+      ["0–134", "Nezekan komplett", "c1", "Quelle: Priorität orange Combat Speed und Cooldown Reduction, dann Attack",
+        ["Combat Speed und Cooldown Reduction (orange Ecken)", "Robe of Flame, Hellfire, Firestorm, Blaze, Flame Arrow je +1", "Attack Bonus, Critical Hit, HP auf dem Weg"]],
+      ["134–268", "Zikel komplett", "c2", "Quelle: Krix Domi, 263 Skill-Punkte-Route",
+        ["Damage Boost (orange), Hellfire, Flame Arrow, Firestorm +1", "Grace of Enhancement, Vitality Evaporation, Revitalization Contract", "Attack und Crit"]],
+      ["268–400", "Vaizel komplett", "c3", "Quelle: Krix Domi, aion2-meta",
+        ["Critical Damage Boost (orange)", "Wish of Concentration +1 früh", "Grace of Resistance, Attack, HP, Defense"]],
+      ["400–450", "Triniel angerissen", "c4", "Abgeleitet: nur die Skill-Nodes",
+        ["Blaze +1 und Attack-/Crit-Nodes", "Multi-Hit und Defensive überspringen", "Frost Burst und Ice Chain nur, wenn Punkte übrig sind"]]
+    ] : [
+      ["0–134", "Nezekan komplett", "c1", "wie PvE: Combat Speed und Cooldown Reduction zuerst",
+        ["Combat Speed und Cooldown Reduction", "Hellfire, Firestorm, Blaze, Flame Arrow +1", "Defense und HP statt reiner Crit-Nodes"]],
+      ["134–268", "Zikel komplett", "c2", "Revitalization Contract und Critical Hit Resist ziehen",
+        ["Damage Boost, Damage Tolerance (orange)", "Revitalization Contract, Critical Hit Resist", "Hellfire, Flame Arrow, Firestorm"]],
+      ["268–400", "Vaizel komplett", "c3", "Grace of Resistance statt Grace of Enhancement",
+        ["Critical Damage Boost und Tolerance (orange)", "Wish of Concentration, Grace of Resistance", "Defense, HP"]],
+      ["400–450", "Azphel (eigene Währung)", "c5", "Azphel-Nodes: Status Effect Resist, PvP Defense, PvP Damage Boost",
+        ["Status Effect Resist +1 % (3 Punkte) vor PvP Damage Boost (4 Punkte)", "PvP Accuracy +5 und PvP Evasion +3 (2 Punkte)", "PvP Critical Hit Resist, PvP Defense, HP"]]
+    ];
+    function stageCard(s) {
+      var drv = s[0] === "400–450";
+      return '<div class="card"><div class="tags"><span class="mono" style="color:var(--accent);font-weight:600">' + s[0] + '</span><span class="tag ' + (drv ? "drv" : "hyb") + '">' + (drv ? "abgeleitet" : "veröffentlicht") + "</span></div><h3>" + s[1] + "</h3>" + ul(s[4]) + '<p class="sub">' + s[3] + "</p></div>";
+    }
+    var boards = [
+      ["Nezekan", "Lv 12", "134", "Combat Speed, Cooldown Reduction"],
+      ["Zikel", "Lv 20", "134", "Damage Boost, Damage Tolerance"],
+      ["Vaizel", "Lv 30", "134", "Critical Damage Boost und Tolerance"],
+      ["Triniel", "Lv 40", "168", "Multi-Hit Chance und Resist"],
+      ["Azphel", "Lv 45", "232 (PvP-Währung)", "PvP Attack, PvP Damage Boost, Status Effect Resist"],
+      ["Ariel", "neu 21.10.", "60 Fragmente", "4× PvE Damage Boost (+6 %), 1× Boss Damage Boost (+1 %), Crit +10"]
+    ];
+    return head("Daevanion Board: 400 und 450 Punkte, " + M("PvE", "PvP"), "Die vier Kernbretter kosten 570 Punkte. Alle bekannten Quellen für PvE-Kristalle summieren sich auf etwa 416 (Level 12–45: 136, Sealed Dungeons: 122, Regionalquests: 58, Shugo-Shop: 50, Nightmare-Shop: 50).") +
+      '<div class="grid">' + stages.map(stageCard).join("") + "</div>" +
+      '<div class="note warn"><b>400 und 450 sind abgeleitet.</b> Der Guide nennt ein PvE-Ziel von 263 Skill-Punkten, die Bretter selbst sind 134/134/134/168 groß. 400 entspricht grob drei vollen Brettern (402). 450 setzt etwa 48 weitere Punkte voraus; dafür reichen die dokumentierten Kristallquellen (416) rechnerisch nicht aus. Ariel (60) kommt separat dazu. Die Reihenfolge ist aus der Prioritätsregel gebaut: orange Combat Speed und Cooldown Reduction, dann Attack und Damage Boost, dann Critical Damage Boost.</div>' +
+      head("Prioritätsregeln") +
+      '<ol class="order">' +
+      "<li><span><b>Orange Ecken zuerst:</b> Combat Speed und Cooldown Reduction, dann Attack Bonus und Damage Boost, dann Critical Damage Boost.</span></li>" +
+      "<li><span><b>Blaue Skill-Nodes:</b> Wish, Firestorm, Flame Arrow, Blaze, Bittercold Wind, Winter's Shackles, Hellfire (mindestens bis 12). Dazu Flame Scattershot, Frost sowie die grünen Fire Mark, Grace of Enhancement und Robe of Earth.</span></li>" +
+      "<li><span><b>Überspringen:</b> Multi-Hit und defensive orange Nodes im PvE. Accuracy kommt später. Im PvP bleiben die defensiven Nodes und Status-Resist drin.</span></li>" +
+      "<li><span><b>Ariel:</b> alle vier PvE-Damage-Boost-Nodes (+6 %), einmal Boss Damage Boost, Crit +10. 100 Ariel-Fragmente ergeben einen Kristall; bis zu 30 von Krao Cave Hard und 30 von Draupnir Hard (Item-Level 2600).</span></li>" +
+      "</ol>" +
+      head("Bretter im Überblick") +
+      table(["Brett", "Freischaltung", "Punkte", "Orange Ecken / Besonderheit"], boards) +
+      '<div class="note">Top-Spieler in Korea nutzen Nezekan (65 von 88 Nodes), Zikel (55), Vaizel (53) und nur 40 von 116 auf Triniel. Azphel nutzen nur 3 von 152 Nodes die PvE-Spieler.</div>';
+  }
+
+  /* ---------- ARCANA ---------- */
+  function arcana() {
+    var cards = [
+      ["Chalice", "Time [Siel]: Combat Speed", "Space [Israphel] (selten)", "Primal Vigor", "Firestorm +3, Blaze +2, Bittercold Wind +2, Wish +2", "Vigor bei 98 % (PvE) und 99 % (PvP)."],
+      ["Parchment", "Life [Yustiel] oder Destiny [Marchutan]", "Life [Yustiel]: HP", "Primal Vigor", "Hellfire +3, Firestorm +2, Blaze +2, Wish +2", "PvE: Magic 94 % und Vigor 92 % gleichauf; PvP: Vigor 94 %."],
+      ["Compass", "Death [Triniel] (Magic, 89 %)", "Freedom [Vaizel]: Accuracy (Vigor, 65 %)", "Magic Armor", "Bittercold Wind +3 (Krix Domi: +4), Winter's Shackles +3, Defiance +2, Ice Chain +1", "PvP wechselt auf Vigor für Accuracy."],
+      ["Mirror", "Wisdom [Lumiel]: Double Chance (Magic, 78 %)", "Illusion [Kaisinel]: Cooldown Reduction (Vigor, 56 %)", "Magic Armor", "Robe of Flame +4, Robe of Earth +2, Vitality Evaporation +2, Absorb Essence +1", "Im PvP 44 % Magic und 56 % Vigor."],
+      ["Bell", "Destruction [Zikel]: Attack (Magic, 98 %)", "Destruction (Magic 94 %) oder Justice [Nezekan] (Vigor, 57 %)", "Magic Armor", "Fire Mark +4, Robe of Cold +2, Revitalization Contract +2, Grace of Resistance +1", "Bell of Magic ist in beiden Modi Standard."]
+    ];
+    return head("Arcana mit Gott-Stats und Skill-Linien: " + M("PvE", "PvP"), "Ziel: Wish of Concentration auf 20, danach Hellfire auf 20. Flame Arrow, Firestorm und Blaze brauchen nur 16. Ringe geben zusätzlich +2 Bittercold Wind und +2 Wish. Die Karten werden mit Season 2 ersetzt.") +
+      '<div class="grid wide">' + cards.map(function (c) {
+        return '<div class="card"><h3>' + c[0] + '</h3><div class="mode"><div class="mh"><span class="tag ' + mode + '">' + M("PvE", "PvP") + '</span></div><p>' + M(c[1], c[2]) + '</p></div><div class="mode"><div class="mh"><span class="tag hyb">Skill-Linien (Endgame)</span></div>' + chips(c[4].split(", "), 2) + '</div><p class="sub">Set: ' + c[3] + ". " + c[5] + "</p></div>";
+      }).join("") + "</div>" +
+      '<div class="note"><b>Aktive und passive Linien:</b> Chalice und Parchment tragen die aktiven Hauptskills (Firestorm, Blaze, Hellfire, Bittercold, Wish). Compass gibt Bittercold Wind, Winter\'s Shackles, Defiance und Ice Chain. Mirror und Bell liefern die Passive (Robe of Flame, Fire Mark, Robe of Earth, Robe of Cold, Vitality Evaporation, Revitalization Contract, Grace of Resistance, Absorb Essence).</div>' +
+      '<div class="note warn"><b>Lücke.</b> Die Set-Boni (Primal Vigor, Magic Armor) sind hier mit den Zuordnungen aus dem Guide übernommen; ihre genauen Werte stehen nicht in den Sorcerer-Quellen. Für den PvP-Build ist die Kartenwahl aus den Pick-Raten abgeleitet. <span class="tag drv">abgeleitet</span></div>';
+  }
+
+  /* ---------- PANTHEON ---------- */
+  function pantheon() {
+    return head("Pantheon: " + M("PvE", "PvP"), "Das Pantheon schaltet mit der Ascension-Quest „The One Who Hears the Voice“ (Level 22) frei und hat 1 Colossus-Slot, 4 Statuen-Slots und 12 Artwork-Slots. Statuen werden nicht verbessert, sondern durch bessere ersetzt.") +
+      '<div class="kpis"><div class="kpi"><span class="n">1</span><span class="l">Colossus</span></div><div class="kpi"><span class="n">4</span><span class="l">Statuen</span></div><div class="kpi"><span class="n">12</span><span class="l">Artworks</span></div></div>' +
+      head("Gott-Stat-Reihenfolge") +
+      table(["Gott-Stat", "Effekt", M("PvE", "PvP")], [
+        ["Time [Siel]", "Combat Speed", M("1", "1")],
+        ["Illusion [Kaisinel]", "Cooldown Reduction", M("2", "3")],
+        ["Destruction [Zikel]", "Attack", M("3", "–")],
+        ["Wisdom [Lumiel]", "Double Chance", M("4", "–")],
+        ["Freedom [Vaizel]", "Accuracy", M("–", "2")],
+        ["Life [Yustiel]", "HP", M("–", "4")]
+      ].map(function (r) { return [r[0], r[1], r[2] === "–" ? "–" : '<span class="mono" style="color:var(--' + mode + ')">' + r[2] + "</span>"]; })) +
+      '<div class="note warn"><b>Keine Item-Liste gefunden.</b> Für den Sorcerer nennt keine Quelle konkrete Best-in-Slot-Items für Colossus, Statuen oder Artworks. Die Reihenfolge oben ist aus den Gott-Stats der Top-Armbänder (Time, Destruction, Illusion, Wisdom bei 100 %) und der PvP-Stat-Reihenfolge abgeleitet. Praktisch: Statuen mit zwei brauchbaren Gott-Stats wählen, auch bei niedrigerer Qualität; Quellen zeigt die Source Information im Spiel. Kommt eine belastbare Liste auf, trage ich sie nach. <span class="tag drv">abgeleitet</span></div>';
+  }
+
+  var R = { ueberblick: overview, skills: skills, stigmas: stigmas, gear: gear, pets: pets, daevanion: daevanion, arcana: arcana, pantheon: pantheon };
+  var row = document.getElementById("tabrow");
+  var cur = "ueberblick";
+  function show(id) {
+    if (!R[id]) id = "ueberblick";
+    cur = id;
+    TABS.forEach(function (t) {
+      var p = document.getElementById("p-" + t[0]);
+      var b = document.getElementById("tab-" + t[0]);
+      var on = t[0] === id;
+      p.hidden = !on;
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      if (on) p.innerHTML = R[id]();
+    });
+  }
+  TABS.forEach(function (t) {
+    var b = document.createElement("button");
+    b.id = "tab-" + t[0]; b.type = "button"; b.setAttribute("role", "tab"); b.textContent = t[1];
+    b.addEventListener("click", function () { show(t[0]); try { window.scrollTo({ top: 0 }); } catch (e) {} });
+    row.appendChild(b);
+  });
+  function setMode(m) {
+    mode = m;
+    try { localStorage.setItem("sorc-mode", m); } catch (e) {}
+    document.getElementById("m-pve").setAttribute("aria-pressed", m === "pve" ? "true" : "false");
+    document.getElementById("m-pvp").setAttribute("aria-pressed", m === "pvp" ? "true" : "false");
+    show(cur);
+  }
+  document.getElementById("m-pve").addEventListener("click", function () { setMode("pve"); });
+  document.getElementById("m-pvp").addEventListener("click", function () { setMode("pvp"); });
+  var start = (location.hash || "").replace("#", "");
+  setMode(mode);
+  if (start && R[start]) show(start);
+})();
+</script>
+
+</body>
+</html>
